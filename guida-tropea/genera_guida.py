@@ -325,7 +325,7 @@ def build():
             "nome": "3. Spiaggia del Cannone",
             "dist": "~900 m · 12–15 min a piedi",
             "voto": "4,4",
-            "img": "cannone.jpg",
+            "img": None,
             "desc": (
                 "Piccola insenatura verso il porto, meno affollata della Rotonda. "
                 "Nome dai cannoni spagnoli ritrovati in zona. Atmosfera più riservata."
@@ -336,7 +336,7 @@ def build():
             "nome": "4. Spiaggia A Linguata / Mare Grande",
             "dist": "~1–1,5 km",
             "voto": "4,5",
-            "img": "linguata.jpg",
+            "img": None,
             "desc": (
                 "Tratto più lungo della costa tropeana: sabbia bianca, fondali limpidissimi, "
                 "lidi e zone libere. Buona per famiglie che vogliono più spazio."
@@ -347,7 +347,7 @@ def build():
             "nome": "5. Spiaggia Passo del Cavaliere",
             "dist": "~1,8 km · 5 min in auto",
             "voto": "4,3",
-            "img": "passo.jpg",
+            "img": None,
             "desc": (
                 "Fondale sabbioso, atmosfera più rilassata rispetto alle spiagge sotto la rupe. "
                 "Fa parte del tratto Mare Grande."
@@ -358,7 +358,7 @@ def build():
             "nome": "6. Spiaggia dell'Occhiale",
             "dist": "~2,5 km · ~8 min in auto",
             "voto": "4,5",
-            "img": "occhiale.jpg",
+            "img": None,
             "desc": (
                 "Più selvaggia: scogli a forma di occhiali, snorkel e paesaggio roccioso. "
                 "Ambiente naturale, meno «da cartolina turistica»."
@@ -377,7 +377,8 @@ def build():
     # Spiagge extra: Riaci etc.
     story.extend(sezione_header(
         "Spiagge dei dintorni: Riaci, Formicoli, Capo Vaticano",
-        "Le baie più belle tra Tropea e Capo Vaticano (alcune oltre i 5 km).",
+        "Le baie più belle tra Tropea e Capo Vaticano (alcune oltre i 5 km). "
+        "Foto solo dove disponibile una immagine specifica della spiaggia.",
         styles,
     ))
 
@@ -399,7 +400,7 @@ def build():
             "nome": "8. Spiaggia di Formicoli",
             "dist": "~4–5 km · 10–12 min in auto",
             "voto": "4,5",
-            "img": "formicoli.jpg",
+            "img": None,
             "desc": (
                 "Tra Riaci e Capo Vaticano. Mare bellissimo e fondali ricchi "
                 "(snorkeling/immersioni). Nome legato all'antico porto romano Forum Herculis. "
@@ -411,7 +412,7 @@ def build():
             "nome": "9. Spiaggia della Scalea (Santa Domenica)",
             "dist": "~3–4 km · ~10 min in auto",
             "voto": "4,4",
-            "img": "scalea.jpg",
+            "img": None,
             "desc": (
                 "Incastonata tra Riaci e Formicoli, ai piedi di un costone di arenaria "
                 "(~70 m). Accesso tramite scalinata dal paese. Paesaggio suggestivo, "
@@ -423,7 +424,7 @@ def build():
             "nome": "10. Spiaggia di Michelino (Parghelia)",
             "dist": "~4,5 km · 10–12 min in auto",
             "voto": "4,6",
-            "img": "michelino.jpg",
+            "img": None,
             "desc": (
                 "A nord di Tropea: sabbia bianchissima e mare da cartolina. "
                 "Una delle baie più belle entro 5 km, verso Parghelia/Zambrone."
@@ -434,7 +435,7 @@ def build():
             "nome": "11. Grotticelle (Capo Vaticano)",
             "dist": "~11 km · 20–25 min in auto",
             "voto": "4,7",
-            "img": "grotticelle.jpg",
+            "img": None,
             "desc": (
                 "La «regina» di Capo Vaticano: sabbia fine, acque turchesi, scogli. "
                 "Spesso chiamata il Caraibi della Calabria. Attrezzata e molto gettonata "
@@ -446,7 +447,7 @@ def build():
             "nome": "12. Spiaggia di Santa Maria (Capo Vaticano)",
             "dist": "~10–11 km · ~20 min in auto",
             "voto": "4,5",
-            "img": "santa_maria_cv.jpg",
+            "img": None,
             "desc": (
                 "Vicino all'omonimo borgo marinaro. Acque calme e spesso poco profonde: "
                 "adatta alle famiglie. Lungomare con locali per aperitivo al tramonto."
@@ -457,7 +458,7 @@ def build():
             "nome": "13. Praia i Focu (Capo Vaticano)",
             "dist": "~11 km · meglio via mare / discesa ripida",
             "voto": "4,8",
-            "img": "praia_focu.jpg",
+            "img": None,
             "desc": (
                 "Forse la caletta più spettacolare della costa: racchiusa tra alte rupi, "
                 "mare incredibile. Spesso raggiungibile in barca o con discese impegnative. "
@@ -473,8 +474,8 @@ def build():
         ))
 
     story.append(Paragraph(
-        "Nota foto: immagini da Wikimedia Commons (Tropea, Riaci, Capo Vaticano). "
-        "Alcune foto di zona Capo Vaticano sono rappresentative della costa ricadese.",
+        "Nota foto: solo immagini specifiche (Wikimedia Commons) per Marina Isola, "
+        "Rotonda e Baia di Riaci. Le altre spiagge sono senza foto per evitare immagini generiche riusate.",
         styles["Nota"],
     ))
     story.append(PageBreak())
