@@ -1,15 +1,21 @@
 #!/usr/bin/env python3
-"""Genera la Guida Tropea PDF con distanze da Camping Marina dell'Isola."""
+"""Genera la Guida Tropea PDF con immagini, voti e link."""
 
+import os
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import cm
 from reportlab.lib.colors import HexColor, white
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.enums import TA_JUSTIFY
+from reportlab.lib.enums import TA_JUSTIFY, TA_LEFT
 from reportlab.platypus import (
     SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle,
-    PageBreak, KeepTogether, HRFlowable,
+    PageBreak, KeepTogether, HRFlowable, Image, Flowable,
 )
+
+DIR = os.path.dirname(os.path.abspath(__file__))
+IMG = os.path.join(DIR, "immagini")
+THUMBS = os.path.join(IMG, "thumbs")
+OUTPUT = os.path.join(DIR, "Guida_Tropea_Camping_Marina_Isola.pdf")
 
 BLU_MARE = HexColor("#0077A8")
 BLU_SCURO = HexColor("#0A3D5C")
@@ -21,9 +27,26 @@ GRIGIO = HexColor("#4A5568")
 ORO = HexColor("#B8860B")
 BIANCO = white
 
-OUTPUT = "/workspace/guida-tropea/Guida_Tropea_Camping_Marina_Isola.pdf"
 BASE_ADDR = "Via Lungomare Sorrentino, 89861 Tropea (VV)"
 BASE_COORDS = "38°40'43\"N · 15°53'41\"E"
+
+
+def img_path(name):
+    for base in (THUMBS, IMG):
+        p = os.path.join(base, name)
+        if os.path.isfile(p):
+            return p
+    return None
+
+
+def beach_thumb(name, w=16.5 * cm, h=4.8 * cm):
+    p = img_path(name)
+    if not p:
+        return None
+    try:
+        return Image(p, width=w, height=h)
+    except Exception:
+        return None
 
 
 def header_footer(canvas, doc):
@@ -46,6 +69,22 @@ def cover_page(canvas, doc):
     canvas.saveState()
     canvas.setFillColor(BLU_SCURO)
     canvas.rect(0, 0, A4[0], A4[1], fill=1, stroke=0)
+    # foto cover se disponibile
+    cover = img_path("cover.jpg") or img_path("marina_isola.jpg") or img_path("isola.jpg")
+    if cover:
+        try:
+            from reportlab.lib.utils import ImageReader
+            canvas.drawImage(ImageReader(cover), 0, A4[1] * 0.55, width=A4[0],
+                             height=A4[1] * 0.45, preserveAspectRatio=False, anchor="c")
+            canvas.setFillColor(BLU_SCURO)
+            try:
+                canvas.setFillAlpha(0.45)
+                canvas.rect(0, A4[1] * 0.55, A4[0], A4[1] * 0.45, fill=1, stroke=0)
+                canvas.setFillAlpha(1)
+            except Exception:
+                pass
+        except Exception:
+            pass
     canvas.setFillColor(ACQUA)
     canvas.rect(0, A4[1] * 0.42, A4[0], 0.4 * cm, fill=1, stroke=0)
     canvas.setFillColor(BLU_MARE)
@@ -53,79 +92,83 @@ def cover_page(canvas, doc):
 
     canvas.setFillColor(BIANCO)
     canvas.setFont("Helvetica-Bold", 14)
-    canvas.drawCentredString(A4[0] / 2, A4[1] - 3.5 * cm, "LA TUA GUIDA PERSONALE")
+    canvas.drawCentredString(A4[0] / 2, A4[1] - 3.2 * cm, "LA TUA GUIDA PERSONALE")
     canvas.setFont("Helvetica-Bold", 36)
-    canvas.drawCentredString(A4[0] / 2, A4[1] - 5.5 * cm, "TROPEA")
-    canvas.setFont("Helvetica", 14)
-    canvas.drawCentredString(A4[0] / 2, A4[1] - 6.8 * cm, "Spiagge · Ristoranti · Tramonti · Chicche")
+    canvas.drawCentredString(A4[0] / 2, A4[1] - 5.0 * cm, "TROPEA")
+    canvas.setFont("Helvetica", 12)
+    canvas.drawCentredString(A4[0] / 2, A4[1] - 6.2 * cm, "Spiagge · Ristoranti · Tramonti · Chicche")
     canvas.setFillColor(SABBIA)
-    canvas.setFont("Helvetica-Oblique", 12)
-    canvas.drawCentredString(A4[0] / 2, A4[1] - 8.0 * cm, "con distanze e voti da Camping Marina dell'Isola")
+    canvas.setFont("Helvetica-Oblique", 11)
+    canvas.drawCentredString(A4[0] / 2, A4[1] - 7.2 * cm, "con foto, voti /5, distanze e link")
 
     canvas.setFillColor(HexColor("#0F4A6B"))
-    canvas.roundRect(2.5 * cm, 4.2 * cm, A4[0] - 5 * cm, 4.5 * cm, 8, fill=1, stroke=0)
+    canvas.roundRect(2.5 * cm, 3.8 * cm, A4[0] - 5 * cm, 4.5 * cm, 8, fill=1, stroke=0)
     canvas.setFillColor(ACQUA)
     canvas.setFont("Helvetica-Bold", 11)
-    canvas.drawCentredString(A4[0] / 2, 8.0 * cm, "IL TUO PUNTO DI PARTENZA")
+    canvas.drawCentredString(A4[0] / 2, 7.6 * cm, "IL TUO PUNTO DI PARTENZA")
     canvas.setFillColor(BIANCO)
     canvas.setFont("Helvetica-Bold", 13)
-    canvas.drawCentredString(A4[0] / 2, 7.0 * cm, "Camping Marina dell'Isola")
+    canvas.drawCentredString(A4[0] / 2, 6.6 * cm, "Camping Marina dell'Isola")
     canvas.setFont("Helvetica", 10)
-    canvas.drawCentredString(A4[0] / 2, 6.2 * cm, BASE_ADDR)
-    canvas.drawCentredString(A4[0] / 2, 5.6 * cm, BASE_COORDS)
+    canvas.drawCentredString(A4[0] / 2, 5.8 * cm, BASE_ADDR)
+    canvas.drawCentredString(A4[0] / 2, 5.2 * cm, BASE_COORDS)
     canvas.setFont("Helvetica-Oblique", 9)
-    canvas.drawCentredString(A4[0] / 2, 4.9 * cm, "Accesso diretto al mare · ai piedi di Santa Maria dell'Isola")
+    canvas.drawCentredString(A4[0] / 2, 4.5 * cm, "Accesso diretto al mare · ai piedi di Santa Maria dell'Isola")
     canvas.setFillColor(SABBIA)
-    canvas.setFont("Helvetica", 9)
-    canvas.drawCentredString(A4[0] / 2, 2.3 * cm, "Distanze indicative · voti /5 da Google (indicativi 2025–2026)")
+    canvas.setFont("Helvetica", 8)
+    canvas.drawCentredString(A4[0] / 2, 2.2 * cm, "Foto: Wikimedia Commons · voti indicativi Google 2025–2026")
     canvas.restoreState()
 
 
 def make_styles():
     styles = getSampleStyleSheet()
     styles.add(ParagraphStyle(
-        name="TitoloSezione", fontName="Helvetica-Bold", fontSize=17,
-        textColor=BLU_SCURO, spaceBefore=4, spaceAfter=8, leading=20,
+        name="TitoloSezione", fontName="Helvetica-Bold", fontSize=16,
+        textColor=BLU_SCURO, spaceBefore=4, spaceAfter=6, leading=19,
     ))
     styles.add(ParagraphStyle(
-        name="SottoTitolo", fontName="Helvetica", fontSize=9.5,
-        textColor=GRIGIO, spaceAfter=10, leading=13,
+        name="SottoTitolo", fontName="Helvetica", fontSize=9,
+        textColor=GRIGIO, spaceAfter=8, leading=12,
     ))
     styles.add(ParagraphStyle(
-        name="NomeLuogo", fontName="Helvetica-Bold", fontSize=11,
-        textColor=BLU_MARE, spaceBefore=6, spaceAfter=2, leading=14,
+        name="NomeLuogo", fontName="Helvetica-Bold", fontSize=10.5,
+        textColor=BLU_MARE, spaceBefore=2, spaceAfter=2, leading=13,
     ))
     styles.add(ParagraphStyle(
-        name="Distanza", fontName="Helvetica-Bold", fontSize=9,
-        textColor=CORALLO, spaceAfter=2, leading=11,
+        name="Meta", fontName="Helvetica-Bold", fontSize=8.5,
+        textColor=ORO, spaceAfter=2, leading=11,
     ))
     styles.add(ParagraphStyle(
-        name="Voto", fontName="Helvetica-Bold", fontSize=9,
-        textColor=ORO, spaceAfter=3, leading=11,
+        name="Descrizione", fontName="Helvetica", fontSize=8.5,
+        textColor=GRIGIO, alignment=TA_JUSTIFY, spaceAfter=2, leading=11,
     ))
     styles.add(ParagraphStyle(
-        name="Descrizione", fontName="Helvetica", fontSize=9,
-        textColor=GRIGIO, alignment=TA_JUSTIFY, spaceAfter=4, leading=12,
-    ))
-    styles.add(ParagraphStyle(
-        name="Nota", fontName="Helvetica-Oblique", fontSize=8,
-        textColor=GRIGIO, spaceAfter=4, leading=10,
+        name="Nota", fontName="Helvetica-Oblique", fontSize=7.5,
+        textColor=GRIGIO, spaceAfter=3, leading=9,
     ))
     styles.add(ParagraphStyle(
         name="Intro", fontName="Helvetica", fontSize=9.5,
-        textColor=GRIGIO, alignment=TA_JUSTIFY, spaceAfter=10, leading=13,
+        textColor=GRIGIO, alignment=TA_JUSTIFY, spaceAfter=8, leading=13,
     ))
     styles.add(ParagraphStyle(
-        name="TabCell", fontName="Helvetica", fontSize=8,
-        textColor=GRIGIO, leading=10,
+        name="TabCell", fontName="Helvetica", fontSize=7.5,
+        textColor=GRIGIO, leading=9,
     ))
     styles.add(ParagraphStyle(
-        name="TabHead", fontName="Helvetica-Bold", fontSize=8.5,
+        name="TabHead", fontName="Helvetica-Bold", fontSize=8,
         textColor=BIANCO, leading=10,
     ))
     styles.add(ParagraphStyle(
-        name="Consiglio", fontName="Helvetica", fontSize=8.5,
-        textColor=VERDE, spaceAfter=3, leading=11,
+        name="Consiglio", fontName="Helvetica", fontSize=8,
+        textColor=VERDE, spaceAfter=2, leading=10,
+    ))
+    styles.add(ParagraphStyle(
+        name="Link", fontName="Helvetica", fontSize=8,
+        textColor=BLU_MARE, spaceAfter=2, leading=10,
+    ))
+    styles.add(ParagraphStyle(
+        name="SmallLeft", fontName="Helvetica", fontSize=8.5,
+        textColor=GRIGIO, alignment=TA_LEFT, leading=11,
     ))
     return styles
 
@@ -138,16 +181,52 @@ def sezione_header(titolo, sottotitolo, styles):
     ]
 
 
-def scheda(nome, distanza, desc, styles, voto=None, consiglio=None):
+def scheda_spiaggia(nome, distanza, voto, desc, styles, image_file=None, consiglio=None):
+    elems = []
+    thumb = beach_thumb(image_file) if image_file else None
+    if thumb:
+        elems.append(thumb)
+        elems.append(Spacer(1, 3))
+    elems.extend([
+        Paragraph(nome, styles["NomeLuogo"]),
+        Paragraph(f"Voto: {voto}/5  ·  Distanza: {distanza}", styles["Meta"]),
+        Paragraph(desc, styles["Descrizione"]),
+    ])
+    if consiglio:
+        elems.append(Paragraph(f"Consiglio: {consiglio}", styles["Consiglio"]))
+    elems.append(Spacer(1, 8))
+    return KeepTogether(elems)
+
+
+def scheda_ristorante(nome, distanza, voto, desc, styles, link=None, consiglio=None):
+    elems = [
+        Paragraph(nome, styles["NomeLuogo"]),
+        Paragraph(f"Voto: {voto}/5  ·  Distanza: {distanza}", styles["Meta"]),
+        Paragraph(desc, styles["Descrizione"]),
+    ]
+    if link:
+        elems.append(Paragraph(
+            f'Link: <link href="{link}" color="#0077A8"><u>{link}</u></link>',
+            styles["Link"],
+        ))
+    if consiglio:
+        elems.append(Paragraph(f"Consiglio: {consiglio}", styles["Consiglio"]))
+    elems.append(Spacer(1, 4))
+    return KeepTogether(elems)
+
+
+def scheda(nome, distanza, desc, styles, voto=None, consiglio=None, link=None):
     elems = [Paragraph(nome, styles["NomeLuogo"])]
     if voto is not None:
-        elems.append(Paragraph(
-            f"Voto: {voto}/5  ·  Distanza: {distanza}",
-            styles["Voto"],
-        ))
+        elems.append(Paragraph(f"Voto: {voto}/5  ·  Distanza: {distanza}", styles["Meta"]))
     else:
-        elems.append(Paragraph(f"Distanza: {distanza}", styles["Distanza"]))
+        elems.append(Paragraph(f"Distanza: {distanza}", styles["Meta"]))
     elems.append(Paragraph(desc, styles["Descrizione"]))
+    if link:
+        elems.append(Paragraph(
+            f'Link: <link href="{link}" color="#0077A8"><u>{link}</u></link>',
+            styles["Link"],
+        ))
     if consiglio:
         elems.append(Paragraph(f"Consiglio: {consiglio}", styles["Consiglio"]))
     elems.append(Spacer(1, 3))
@@ -158,7 +237,7 @@ def build():
     styles = make_styles()
     doc = SimpleDocTemplate(
         OUTPUT, pagesize=A4,
-        leftMargin=1.5 * cm, rightMargin=1.5 * cm,
+        leftMargin=1.4 * cm, rightMargin=1.4 * cm,
         topMargin=1.8 * cm, bottomMargin=1.5 * cm,
         title="Guida Tropea – Camping Marina dell'Isola",
         author="Guida personale Tropea",
@@ -167,260 +246,384 @@ def build():
     story.append(PageBreak())
 
     story.append(Paragraph("Benvenuto a Tropea", styles["TitoloSezione"]))
-    story.append(HRFlowable(width="100%", thickness=2, color=ACQUA, spaceAfter=8))
+    story.append(HRFlowable(width="100%", thickness=2, color=ACQUA, spaceAfter=6))
     story.append(Paragraph(
-        "Sei ospite al <b>Camping Marina dell'Isola</b>, in Via Lungomare Sorrentino, "
-        "ai piedi della rupe e del Santuario di Santa Maria dell'Isola. "
-        "Questa guida raccoglie spiagge, <b>ristoranti entro circa 5 km</b> con "
-        "<b>voti /5</b> (indicativi da Google), luoghi da visitare, "
-        "<b>posti per i tramonti</b> e <b>chicche</b> da non perdere.",
+        "Sei ospite al <b>Camping Marina dell'Isola</b>. Guida con "
+        "<b>foto delle spiagge</b>, <b>voti /5</b>, distanze e "
+        "<b>link cliccabili</b> ai ristoranti (entro ~5 km e dintorni).",
         styles["Intro"],
     ))
     story.append(Paragraph(
-        "Nota sui voti: medie indicative da Google/recensioni pubbliche (2025–2026); "
-        "possono variare. Prenota in alta stagione.",
+        "Voti indicativi da Google (2025–2026). Foto da Wikimedia Commons "
+        "(licenze libere). I link si aprono dal PDF con un clic.",
         styles["Nota"],
     ))
 
+    # TABELLA DISTANZE
     story.append(Paragraph("Tabella distanze rapide", styles["TitoloSezione"]))
-    story.append(HRFlowable(width="100%", thickness=2, color=ACQUA, spaceAfter=6))
-    header = [
-        Paragraph("Destinazione", styles["TabHead"]),
-        Paragraph("Distanza", styles["TabHead"]),
-        Paragraph("Come", styles["TabHead"]),
-        Paragraph("Tempo", styles["TabHead"]),
-    ]
-    rows_data = [
+    story.append(HRFlowable(width="100%", thickness=2, color=ACQUA, spaceAfter=5))
+    header = [Paragraph(h, styles["TabHead"]) for h in ("Destinazione", "Distanza", "Come", "Tempo")]
+    rows = [
         ("Spiaggia Marina dell'Isola", "0 m", "a piedi", "immediato"),
         ("Santuario S. Maria dell'Isola", "~150 m", "a piedi", "3–5 min"),
         ("Spiaggia della Rotonda", "~400 m", "a piedi", "5–8 min"),
-        ("Centro storico / Corso", "~450 m", "a piedi (scale)", "8–12 min"),
-        ("Affaccio del Cannone", "~700 m", "a piedi", "10–15 min"),
-        ("Porto di Tropea", "~1,5 km", "a piedi / auto", "20 / 5 min"),
-        ("Spiaggia Michelino (Parghelia)", "~4,5 km", "auto", "10–12 min"),
-        ("Capo Vaticano / Grotticelle", "~11 km", "auto", "20–25 min"),
+        ("Centro storico", "~450 m", "scale", "8–12 min"),
+        ("Baia di Riaci", "~3 km", "auto", "8–10 min"),
+        ("Formicoli / Scalea", "~4–5 km", "auto", "10–12 min"),
+        ("Michelino (Parghelia)", "~4,5 km", "auto", "10–12 min"),
+        ("Grotticelle / Capo Vaticano", "~11 km", "auto", "20–25 min"),
         ("Pizzo Calabro", "~22 km", "auto", "30–35 min"),
     ]
-    data = [header] + [[Paragraph(c, styles["TabCell"]) for c in r] for r in rows_data]
-    t = Table(data, colWidths=[7.0 * cm, 3.2 * cm, 3.2 * cm, 3.2 * cm])
+    data = [header] + [[Paragraph(c, styles["TabCell"]) for c in r] for r in rows]
+    t = Table(data, colWidths=[7.0 * cm, 3.0 * cm, 3.0 * cm, 3.2 * cm])
     t.setStyle(TableStyle([
         ("BACKGROUND", (0, 0), (-1, 0), BLU_SCURO),
         ("ROWBACKGROUNDS", (0, 1), (-1, -1), [HexColor("#E8F6FA"), BIANCO]),
         ("ALIGN", (1, 0), (-1, -1), "CENTER"),
         ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
         ("GRID", (0, 0), (-1, -1), 0.4, HexColor("#D0DCE4")),
-        ("LEFTPADDING", (0, 0), (-1, -1), 5),
-        ("RIGHTPADDING", (0, 0), (-1, -1), 5),
-        ("TOPPADDING", (0, 0), (-1, -1), 4),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+        ("TOPPADDING", (0, 0), (-1, -1), 3),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+        ("LEFTPADDING", (0, 0), (-1, -1), 4),
     ]))
     story.append(t)
     story.append(PageBreak())
 
-    # SPIAGGE
+    # ========== SPIAGGE ==========
     story.extend(sezione_header(
-        "Le migliori spiagge",
-        "Sabbia chiara e acque turchesi a portata di passo (o breve spostamento).",
+        "Le spiagge (con foto e voti)",
+        "Da quelle sotto il camping fino a Riaci, Formicoli e Capo Vaticano.",
         styles,
     ))
-    story.append(scheda(
-        "1. Spiaggia Marina dell'Isola (Mare Piccolo)",
-        "~0 m · accesso diretto dal camping",
-        "La spiaggia del campeggio: sabbia chiara, mare cristallino e lo scoglio di "
-        "Santa Maria dell'Isola. Ideale per snorkel e tramonti (con cielo limpido si "
-        "scorge lo Stromboli). Tratti liberi e lidi.",
-        styles, consiglio="Meglio al mattino presto o nel tardo pomeriggio.",
-    ))
-    story.append(scheda(
-        "2. Spiaggia della Rotonda (Le Roccette)",
-        "~400 m · 5–8 min a piedi",
-        "La più fotografata: mezzaluna sotto la rupe, vista sul Santuario e sullo "
-        "Scoglio di San Leonardo. Mare intenso, sabbia fine. Molto frequentata in agosto.",
+
+    spiagge = [
+        {
+            "nome": "1. Spiaggia Marina dell'Isola (Mare Piccolo)",
+            "dist": "~0 m · accesso diretto dal camping",
+            "voto": "4,6",
+            "img": "marina_isola.jpg",
+            "desc": (
+                "La spiaggia del campeggio: sabbia chiara, mare cristallino e lo scoglio "
+                "di Santa Maria dell'Isola. Ideale per snorkel e tramonti; con cielo limpido "
+                "si scorge lo Stromboli. Tratti liberi e lidi."
+            ),
+            "tip": "Mattina presto o tardo pomeriggio per meno folla.",
+        },
+        {
+            "nome": "2. Spiaggia della Rotonda (Le Roccette)",
+            "dist": "~400 m · 5–8 min a piedi",
+            "voto": "4,7",
+            "img": "rotonda.jpg",
+            "desc": (
+                "La più fotografata di Tropea: mezzaluna sotto la rupe, vista Isola e "
+                "Scoglio di San Leonardo. Mare azzurro intenso, sabbia fine. "
+                "Molto frequentata in agosto."
+            ),
+            "tip": "Arriva presto; ottima anche solo per una passeggiata.",
+        },
+        {
+            "nome": "3. Spiaggia del Cannone",
+            "dist": "~900 m · 12–15 min a piedi",
+            "voto": "4,4",
+            "img": "cannone.jpg",
+            "desc": (
+                "Piccola insenatura verso il porto, meno affollata della Rotonda. "
+                "Nome dai cannoni spagnoli ritrovati in zona. Atmosfera più riservata."
+            ),
+            "tip": None,
+        },
+        {
+            "nome": "4. Spiaggia A Linguata / Mare Grande",
+            "dist": "~1–1,5 km",
+            "voto": "4,5",
+            "img": "linguata.jpg",
+            "desc": (
+                "Tratto più lungo della costa tropeana: sabbia bianca, fondali limpidissimi, "
+                "lidi e zone libere. Buona per famiglie che vogliono più spazio."
+            ),
+            "tip": None,
+        },
+        {
+            "nome": "5. Spiaggia Passo del Cavaliere",
+            "dist": "~1,8 km · 5 min in auto",
+            "voto": "4,3",
+            "img": "passo.jpg",
+            "desc": (
+                "Fondale sabbioso, atmosfera più rilassata rispetto alle spiagge sotto la rupe. "
+                "Fa parte del tratto Mare Grande."
+            ),
+            "tip": None,
+        },
+        {
+            "nome": "6. Spiaggia dell'Occhiale",
+            "dist": "~2,5 km · ~8 min in auto",
+            "voto": "4,5",
+            "img": "occhiale.jpg",
+            "desc": (
+                "Più selvaggia: scogli a forma di occhiali, snorkel e paesaggio roccioso. "
+                "Ambiente naturale, meno «da cartolina turistica»."
+            ),
+            "tip": "Scarpe comode: accesso un po' più impegnativo.",
+        },
+    ]
+    for s in spiagge:
+        story.append(scheda_spiaggia(
+            s["nome"], s["dist"], s["voto"], s["desc"], styles,
+            image_file=s["img"], consiglio=s.get("tip"),
+        ))
+
+    story.append(PageBreak())
+
+    # Spiagge extra: Riaci etc.
+    story.extend(sezione_header(
+        "Spiagge dei dintorni: Riaci, Formicoli, Capo Vaticano",
+        "Le baie più belle tra Tropea e Capo Vaticano (alcune oltre i 5 km).",
         styles,
     ))
-    story.append(scheda(
-        "3. Spiaggia del Cannone",
-        "~900 m · 12–15 min a piedi",
-        "Piccola insenatura verso il porto, meno affollata. Nome dai cannoni spagnoli "
-        "ritrovati in zona. Atmosfera più riservata.",
-        styles,
-    ))
-    story.append(scheda(
-        "4. Spiaggia A Linguata / Mare Grande",
-        "~1–1,5 km",
-        "Tratto più lungo, sabbia bianca e fondali limpidissimi. Buona per famiglie "
-        "che vogliono più spazio (lidi + zone libere).",
-        styles,
-    ))
-    story.append(scheda(
-        "5. Spiaggia Passo del Cavaliere",
-        "~1,8 km · 5 min in auto",
-        "Fondale sabbioso, atmosfera più rilassata rispetto alle spiagge sotto la rupe.",
-        styles,
-    ))
-    story.append(scheda(
-        "6. Spiaggia dell'Occhiale",
-        "~2,5 km · ~8 min in auto",
-        "Più selvaggia: scogli a forma di occhiali, snorkel e paesaggio roccioso.",
-        styles, consiglio="Scarpe comode: accesso un po' più impegnativo.",
-    ))
-    story.append(scheda(
-        "7. Spiaggia di Michelino (Parghelia)",
-        "~4,5 km · 10–12 min in auto",
-        "Sabbia bianchissima e mare da cartolina. Una delle baie più belle entro 5 km.",
-        styles,
-    ))
-    story.append(scheda(
-        "8. Grotticelle & Capo Vaticano",
-        "~11 km · oltre i 5 km · 20–25 min in auto",
-        "Tra le spiagge più belle d'Italia. Consigliato anche tour in barca dal porto "
-        "di Tropea (~35–45 €) per grotte e calette (Praia i Focu).",
-        styles,
+
+    extra = [
+        {
+            "nome": "7. Baia di Riaci (Santa Domenica di Ricadi)",
+            "dist": "~3 km · 8–10 min in auto",
+            "voto": "4,7",
+            "img": "riaci.jpg",
+            "desc": (
+                "Una delle spiagge più celebrate della Costa degli Dei (National Geographic "
+                "tra le migliori d'Italia). Falesie di arenaria, Scoglio Grande iconico, "
+                "mare limpidissimo e snorkel top. Lidi + tratti liberi. "
+                "Non confondere con Riace (Bronzi) sul Jonio!"
+            ),
+            "tip": "Imperdibile dal camping: pochi minuti di auto. Parcheggio in zona baia.",
+        },
+        {
+            "nome": "8. Spiaggia di Formicoli",
+            "dist": "~4–5 km · 10–12 min in auto",
+            "voto": "4,5",
+            "img": "formicoli.jpg",
+            "desc": (
+                "Tra Riaci e Capo Vaticano. Mare bellissimo e fondali ricchi "
+                "(snorkeling/immersioni). Nome legato all'antico porto romano Forum Herculis. "
+                "Meno chiassosa di Grotticelle."
+            ),
+            "tip": "Ottima per chi cerca bellezza senza la folla massima.",
+        },
+        {
+            "nome": "9. Spiaggia della Scalea (Santa Domenica)",
+            "dist": "~3–4 km · ~10 min in auto",
+            "voto": "4,4",
+            "img": "scalea.jpg",
+            "desc": (
+                "Incastonata tra Riaci e Formicoli, ai piedi di un costone di arenaria "
+                "(~70 m). Accesso tramite scalinata dal paese. Paesaggio suggestivo, "
+                "spiaggia più raccolta."
+            ),
+            "tip": None,
+        },
+        {
+            "nome": "10. Spiaggia di Michelino (Parghelia)",
+            "dist": "~4,5 km · 10–12 min in auto",
+            "voto": "4,6",
+            "img": "michelino.jpg",
+            "desc": (
+                "A nord di Tropea: sabbia bianchissima e mare da cartolina. "
+                "Una delle baie più belle entro 5 km, verso Parghelia/Zambrone."
+            ),
+            "tip": "Mezza giornata alternativa alle spiagge sotto Tropea.",
+        },
+        {
+            "nome": "11. Grotticelle (Capo Vaticano)",
+            "dist": "~11 km · 20–25 min in auto",
+            "voto": "4,7",
+            "img": "grotticelle.jpg",
+            "desc": (
+                "La «regina» di Capo Vaticano: sabbia fine, acque turchesi, scogli. "
+                "Spesso chiamata il Caraibi della Calabria. Attrezzata e molto gettonata "
+                "in alta stagione."
+            ),
+            "tip": "Arriva presto o scegli giorni feriali.",
+        },
+        {
+            "nome": "12. Spiaggia di Santa Maria (Capo Vaticano)",
+            "dist": "~10–11 km · ~20 min in auto",
+            "voto": "4,5",
+            "img": "santa_maria_cv.jpg",
+            "desc": (
+                "Vicino all'omonimo borgo marinaro. Acque calme e spesso poco profonde: "
+                "adatta alle famiglie. Lungomare con locali per aperitivo al tramonto."
+            ),
+            "tip": None,
+        },
+        {
+            "nome": "13. Praia i Focu (Capo Vaticano)",
+            "dist": "~11 km · meglio via mare / discesa ripida",
+            "voto": "4,8",
+            "img": "praia_focu.jpg",
+            "desc": (
+                "Forse la caletta più spettacolare della costa: racchiusa tra alte rupi, "
+                "mare incredibile. Spesso raggiungibile in barca o con discese impegnative. "
+                "Una delle immagini iconiche di Capo Vaticano."
+            ),
+            "tip": "Consigliato tour in barca da Tropea (~35–45 €).",
+        },
+    ]
+    for s in extra:
+        story.append(scheda_spiaggia(
+            s["nome"], s["dist"], s["voto"], s["desc"], styles,
+            image_file=s["img"], consiglio=s.get("tip"),
+        ))
+
+    story.append(Paragraph(
+        "Nota foto: immagini da Wikimedia Commons (Tropea, Riaci, Capo Vaticano). "
+        "Alcune foto di zona Capo Vaticano sono rappresentative della costa ricadese.",
+        styles["Nota"],
     ))
     story.append(PageBreak())
 
-    # RISTORANTI
+    # ========== RISTORANTI ==========
     story.extend(sezione_header(
-        "Ristoranti entro circa 5 km",
-        "Dal campeggio al centro e fino a Parghelia. Voti /5 indicativi (Google). "
-        "Ordinati per distanza approssimativa.",
+        "Ristoranti entro circa 5 km (con link)",
+        "Clicca i link nel PDF per aprire sito o Google Maps. Voti /5 indicativi.",
         styles,
     ))
 
-    r_header = [
-        Paragraph("Ristorante", styles["TabHead"]),
-        Paragraph("Voto", styles["TabHead"]),
-        Paragraph("Distanza", styles["TabHead"]),
-        Paragraph("Tipo", styles["TabHead"]),
+    r_header = [Paragraph(h, styles["TabHead"]) for h in ("Ristorante", "Voto", "Dist.", "Link")]
+    r_rows_data = [
+        ("Camping Marina Isola", "4,2*", "0 m", "sito"),
+        ("Tropical (lido)", "4,4", "400 m", "Maps"),
+        ("Scacco Matto", "4,4", "550 m", "Maps"),
+        ("La Villetta", "4,3", "550 m", "Maps"),
+        ("Vicolo 34", "4,5", "500 m", "sito"),
+        ("La Conchiglia da Patea", "4,7", "600 m", "Maps"),
+        ("Incipit", "4,5", "650 m", "sito"),
+        ("Pinturicchio", "4,3", "600 m", "sito"),
+        ("Pimm's", "3,8", "700 m", "Maps"),
+        ("De' Minimi", "4,6", "3–4 km", "sito"),
+        ("Giardino del Mare", "4,3", "4 km", "Maps"),
+        ("Miseria & Nobiltà", "4,5", "4–5 km", "Maps"),
     ]
-    r_rows = [
-        ("Ristorante/Pizzeria del Camping", "4,2*", "~0 m", "Pizza · pesce · vista mare"),
-        ("Tropical (lido)", "4,4", "~400 m", "Pesce in spiaggia"),
-        ("Scacco Matto", "4,4", "~550 m", "Pesce tipico · prezzi ok"),
-        ("La Villetta", "4,3", "~550 m", "Pesce · elegante"),
-        ("Vicolo 34", "4,5", "~500 m", "Osteria moderna calabrese"),
-        ("La Conchiglia da Patea", "4,7", "~600 m", "Italiana · Piazza Ercole"),
-        ("Incipit Restaurant", "4,5", "~650 m", "Mediterranea · pietra"),
-        ("Pinturicchio", "4,3", "~600 m", "Pesce fresco"),
-        ("Pimm's", "3,8", "~700 m", "Vista mare · romantico"),
-        ("De' Minimi (Villa Paola)", "4,6", "~3–4 km", "Gourmet · Michelin"),
-        ("Il Giardino del Mare", "4,3", "~4 km", "Pesce · Parghelia"),
-        ("Miseria & Nobiltà", "4,5", "~4–5 km", "Pizza 72h · Parghelia"),
-    ]
-    r_data = [r_header] + [[Paragraph(c, styles["TabCell"]) for c in r] for r in r_rows]
-    rt = Table(r_data, colWidths=[5.8 * cm, 1.6 * cm, 2.6 * cm, 6.0 * cm])
+    r_data = [r_header] + [[Paragraph(c, styles["TabCell"]) for c in r] for r in r_rows_data]
+    rt = Table(r_data, colWidths=[6.2 * cm, 1.8 * cm, 2.4 * cm, 5.8 * cm])
     rt.setStyle(TableStyle([
         ("BACKGROUND", (0, 0), (-1, 0), BLU_SCURO),
         ("ROWBACKGROUNDS", (0, 1), (-1, -1), [HexColor("#E8F6FA"), BIANCO]),
         ("ALIGN", (1, 0), (2, -1), "CENTER"),
         ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
         ("GRID", (0, 0), (-1, -1), 0.4, HexColor("#D0DCE4")),
-        ("LEFTPADDING", (0, 0), (-1, -1), 4),
-        ("RIGHTPADDING", (0, 0), (-1, -1), 4),
         ("TOPPADDING", (0, 0), (-1, -1), 3),
         ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+        ("LEFTPADDING", (0, 0), (-1, -1), 3),
     ]))
     story.append(rt)
-    story.append(Paragraph(
-        "* Voto stimato da recensioni ospiti del campeggio (non sempre presente su Google).",
-        styles["Nota"],
-    ))
-    story.append(Spacer(1, 6))
+    story.append(Paragraph("* Stima da recensioni ospiti campeggio.", styles["Nota"]))
+    story.append(Spacer(1, 4))
 
-    story.append(scheda(
-        "Ristorante / Pizzeria del Camping Marina dell'Isola",
-        "0 m · dentro il campeggio",
-        "Bar-ristorante-pizzeria con forno a legna e vista mare (nelle giornate limpide "
-        "verso le Eolie). Piatti tipici, pesce e pizza. Comodo senza salire in centro.",
-        styles, voto="4,2*", consiglio="Ideale dopo la spiaggia o se non vuoi spostarti.",
-    ))
-    story.append(scheda(
-        "Tropical (lido / ristorante in spiaggia)",
-        "~300–500 m · zona Rotonda / Mare Piccolo",
-        "Rara eccezione tra i lidi: menu snello, pesce e verdure a km 0. Spaghetti alle "
-        "vongole, tonno scottato, fiori di zucca in tempura. Si mangia a pochi passi dal mare (~30 €).",
-        styles, voto="4,4",
-    ))
-    story.append(scheda(
-        "Scacco Matto",
-        "~500–600 m · centro · 10–12 min a piedi",
-        "Pesce locale, crudi, spaghetti alle vongole, involtini di pesce spada con "
-        "cipolla rossa e tonno alla tropeana. Atmosfera familiare, circa 25 € a persona. "
-        "Segnalato anche dal Gambero Rosso.",
-        styles, voto="4,4", consiglio="Da provare: tonno alla tropeana.",
-    ))
-    story.append(scheda(
-        "La Villetta Ristorante",
-        "~550 m · Via Indipendenza",
-        "Tra i pesce-ristoranti più apprezzati: tonno scottato, alici marinate, "
-        "impiattamento curato. Ambiente elegante ma cordiale. Fascia media/alta.",
-        styles, voto="4,3",
-    ))
-    story.append(scheda(
-        "Vicolo 34 – Osteria Moderna Calabrese",
-        "~500 m · centro storico",
-        "Ingredienti freschi, biologici e a km 0. Specialità calabresi rivisitate, "
-        "pesce del giorno, aperitivi e vini regionali. Cena contemporanea nel borgo.",
-        styles, voto="4,5",
-    ))
-    story.append(scheda(
-        "La Conchiglia da Patea",
-        "~600 m · Largo Sannio / zona Piazza Ercole",
-        "Uno dei meglio votati in città: tonno, risotto alla pescatora, antipasti "
-        "e dolci (tiramisù, cheesecake). Servizio attento, atmosfera calma. "
-        "Circa 40–50 € a persona.",
-        styles, voto="4,7", consiglio="Ottima scelta se cerchi il voto più alto vicino.",
-    ))
+    gmaps = lambda q: f"https://www.google.com/maps/search/?api=1&query={q.replace(' ', '+')}"
+
+    ristoranti = [
+        dict(
+            nome="Ristorante / Pizzeria del Camping Marina dell'Isola",
+            dist="0 m · nel campeggio", voto="4,2*",
+            desc="Forno a legna, pesce, pizza e vista mare (Eolie nelle giornate limpide). Comodo senza salire in centro.",
+            link="https://www.campingmarinaisola.it/",
+            tip="Ideale dopo la spiaggia.",
+        ),
+        dict(
+            nome="Tropical (lido / ristorante in spiaggia)",
+            dist="~300–500 m", voto="4,4",
+            desc="Menu snello, pesce e verdure a km 0. Spaghetti vongole, tonno scottato, fiori di zucca in tempura (~30 €).",
+            link=gmaps("Tropical Beach Tropea"),
+            tip=None,
+        ),
+        dict(
+            nome="Scacco Matto",
+            dist="~550 m · Via Umberto I", voto="4,4",
+            desc="Pesce tipico, involtini pesce spada con cipolla rossa, tonno alla tropeana. Familiare, ~25 €. Gambero Rosso.",
+            link=gmaps("Scacco Matto Tropea Via Umberto I"),
+            tip="Da provare: tonno alla tropeana.",
+        ),
+        dict(
+            nome="La Villetta Ristorante",
+            dist="~550 m · Via Indipendenza 38", voto="4,3",
+            desc="Tonno scottato, alici marinate, impiattamento curato. Elegante ma cordiale.",
+            link=gmaps("La Villetta Ristorante Tropea"),
+            tip=None,
+        ),
+        dict(
+            nome="Vicolo 34 – Osteria Moderna Calabrese",
+            dist="~500 m · centro", voto="4,5",
+            desc="Biologico e km 0, specialità calabresi rivisitate, pesce del giorno, aperitivi e vini.",
+            link="https://www.vicolo34tropea.it/",
+            tip=None,
+        ),
+        dict(
+            nome="La Conchiglia da Patea",
+            dist="~600 m · Largo Sannio / Piazza Ercole", voto="4,7",
+            desc="Tra i meglio votati: tonno, risotto alla pescatora, antipasti, tiramisù. Servizio attento (~40–50 €).",
+            link=gmaps("La Conchiglia da Patea Tropea"),
+            tip="Se cerchi il voto più alto vicino al camping.",
+        ),
+    ]
+    for r in ristoranti:
+        story.append(scheda_ristorante(
+            r["nome"], r["dist"], r["voto"], r["desc"], styles,
+            link=r["link"], consiglio=r.get("tip"),
+        ))
+
     story.append(PageBreak())
 
-    story.append(scheda(
-        "Incipit Restaurant",
-        "~650 m · Largo Galluppi 17",
-        "Nelle cantine di un palazzo del 1720: pietra a vista, cotto, spazi esterni. "
-        "Cucina mediterranea e prodotti tipici calabresi. Carta dei vini curata. "
-        "Consigliato da Gambero Rosso.",
-        styles, voto="4,5",
-    ))
-    story.append(scheda(
-        "Ristorante Pinturicchio",
-        "~500–700 m · centro storico",
-        "Punto di riferimento per pesce fresco e cucina mediterranea. Menu legato "
-        "al pescato del giorno e pasta fresca.",
-        styles, voto="4,3",
-    ))
-    story.append(scheda(
-        "Pimm's",
-        "~700 m · Largo Migliarese 14 · Affaccio",
-        "Antico palazzo con balconcino a picco sul mare (molto ambito: prenota!). "
-        "Pesce in combinazioni non banali e vini calabresi. Location da tramonto "
-        "romantico; le recensioni sulla cucina sono più miste rispetto alla vista.",
-        styles, voto="3,8", consiglio="Vieni per la vista al tramonto; prenota il tavolo sul balcone.",
-    ))
-    story.append(scheda(
-        "De' Minimi – Villa Paola",
-        "~3–4 km · pochi minuti in auto (entro 5 km)",
-        "Gourmet in ex convento: orto di proprietà, menu degustazione, cocktail bar. "
-        "Segnalato Guida Michelin. Da provare la «Tropeana» in terrazza. Prezzo alto "
-        "(~95 € medio TheFork).",
-        styles, voto="4,6", consiglio="Per una cena speciale del soggiorno.",
-    ))
-    story.append(scheda(
-        "Il Giardino del Mare (Parghelia)",
-        "~4 km · 8–10 min in auto",
-        "Pesce, pizza e antipasti a prezzi più contenuti (~20–30 €). Atmosfera rilassata "
-        "fuori dal caos del centro di Tropea.",
-        styles, voto="4,3",
-    ))
-    story.append(scheda(
-        "Miseria & Nobiltà (Parghelia)",
-        "~4–5 km · Via F. Cilea",
-        "Pizzeria top della zona: farine selezionate, lievitazione 72 ore, forno a legna. "
-        "Anche piatti tradizionali. Segnalata dal Gambero Rosso.",
-        styles, voto="4,5", consiglio="Se vuoi la pizza migliore nei dintorni.",
-    ))
+    ristoranti2 = [
+        dict(
+            nome="Incipit Restaurant",
+            dist="~650 m · Largo Galluppi 17", voto="4,5",
+            desc="Cantine di palazzo 1720, pietra a vista. Cucina mediterranea e tipicità calabresi. Gambero Rosso.",
+            link="https://www.incipitrestaurant.com/",
+            tip=None,
+        ),
+        dict(
+            nome="Ristorante Pinturicchio",
+            dist="~500–700 m · centro", voto="4,3",
+            desc="Pesce fresco del giorno e cucina mediterranea. Pasta fresca e tradizione.",
+            link="https://www.ristorantedipesce.tropea.vv.it/",
+            tip=None,
+        ),
+        dict(
+            nome="Pimm's",
+            dist="~700 m · Largo Migliarese 14", voto="3,8",
+            desc="Balconcino a picco sul mare (prenota!). Location da tramonto; cucina più mista nelle recensioni.",
+            link=gmaps("Pimm's Tropea Largo Migliarese"),
+            tip="Vieni per la vista; prenota il tavolo sul balcone.",
+        ),
+        dict(
+            nome="De' Minimi – Villa Paola",
+            dist="~3–4 km · auto (entro 5 km)", voto="4,6",
+            desc="Gourmet in ex convento, orto proprio, Michelin/Gambero. Menu degustazione (~95 € medio).",
+            link="https://deminimi.com/",
+            tip="Cena speciale del soggiorno.",
+        ),
+        dict(
+            nome="Il Giardino del Mare (Parghelia)",
+            dist="~4 km · 8–10 min auto", voto="4,3",
+            desc="Pesce e pizza a prezzi più contenuti (~20–30 €). Fuori dal caos del centro.",
+            link=gmaps("Il Giardino del Mare Parghelia"),
+            tip=None,
+        ),
+        dict(
+            nome="Miseria & Nobiltà (Parghelia)",
+            dist="~4–5 km · Via F. Cilea", voto="4,5",
+            desc="Pizza top: lievitazione 72 ore, forno a legna. Segnalata Gambero Rosso.",
+            link=gmaps("Miseria e Nobiltà Parghelia"),
+            tip="La pizza migliore nei dintorni.",
+        ),
+    ]
+    for r in ristoranti2:
+        story.append(scheda_ristorante(
+            r["nome"], r["dist"], r["voto"], r["desc"], styles,
+            link=r["link"], consiglio=r.get("tip"),
+        ))
+
     story.append(Paragraph(
         "<b>Da assaggiare:</b> cipolla rossa IGP, fileja, tonno/pesce spada alla tropeana, "
-        "'nduja, tartufo di Pizzo (escursione), gelato/granita sul Corso.",
+        "'nduja, tartufo di Pizzo, gelato sul Corso.",
         styles["Descrizione"],
     ))
     story.append(PageBreak())
@@ -431,250 +634,119 @@ def build():
         "Dal simbolo di Tropea ai borghi della Costa degli Dei.",
         styles,
     ))
-    story.append(scheda(
-        "Santuario di Santa Maria dell'Isola",
-        "~150 m · 3–5 min (scalinata)",
-        "Simbolo di Tropea: chiesa sullo scoglio, giardino e terrazza con vista Eolie/"
-        "Stromboli. Biglietto circa 2 €.",
-        styles, voto="4,5", consiglio="Imperdibile al tramonto.",
-    ))
-    story.append(scheda(
-        "Centro storico di Tropea",
-        "~450 m · 8–12 min via scalinata",
-        "Borgo dei Borghi 2021: vicoli, palazzi, tipicità e gelaterie. "
-        "Corso Vittorio Emanuele = passeggiata serale.",
-        styles, voto="4,5",
-    ))
-    story.append(scheda(
-        "Affaccio del Cannone (Largo Villetta)",
-        "~700 m · 10–15 min",
-        "Belvedere iconico: Rotonda, Scoglio San Leonardo e Isola dall'alto. "
-        "Anche una «finestrella» che inquadra la cartolina.",
-        styles, voto="4,7",
-    ))
-    story.append(scheda(
-        "Cattedrale & Museo Diocesano",
-        "~650 m",
-        "Duomo romanico-normanno e museo con tesori religiosi locali.",
-        styles, voto="4,4",
-    ))
-    story.append(scheda(
-        "Porto di Tropea",
-        "~1,5 km",
-        "Partenza tour barca (Capo Vaticano, grotte) e escursioni Eolie.",
-        styles, consiglio="Prenota i tour in alta stagione.",
-    ))
-    story.append(scheda(
-        "Capo Vaticano (Ricadi)",
-        "~11 km · 20–25 min auto",
-        "Faro, belvedere, Grotticelle e calette. Giornata intera consigliata.",
-        styles,
-    ))
-    story.append(scheda(
-        "Pizzo Calabro",
-        "~22 km · 30–35 min auto",
-        "Castello Murat + tartufo di Pizzo (gelato farcito). Combo mare + dolce.",
-        styles, consiglio="Assaggia il tartufo al caffè.",
-    ))
-    story.append(scheda(
-        "Grotte di Zungri («Sbariati»)",
-        "~18 km · 25–30 min auto",
-        "Insediamento rupestre: grotte abitate sin dal Medioevo. Escursione diversa dal mare.",
-        styles,
-    ))
+    for item in [
+        ("Santuario di Santa Maria dell'Isola", "~150 m", "4,5",
+         "Simbolo di Tropea. Scalinata, giardino, vista Eolie/Stromboli. Biglietto ~2 €.",
+         "Imperdibile al tramonto."),
+        ("Centro storico di Tropea", "~450 m", "4,5",
+         "Borgo dei Borghi 2021: vicoli, palazzi, tipicità. Corso = passeggiata serale.", None),
+        ("Affaccio del Cannone", "~700 m", "4,7",
+         "Belvedere iconico + finestrella cartolina su Isola e spiaggia.", None),
+        ("Cattedrale & Museo Diocesano", "~650 m", "4,4",
+         "Duomo romanico-normanno e museo diocesano.", None),
+        ("Porto di Tropea", "~1,5 km", None,
+         "Tour barca Capo Vaticano/grotte ed escursioni Eolie.", "Prenota in alta stagione."),
+        ("Capo Vaticano", "~11 km", "4,7",
+         "Faro, belvedere, Grotticelle e calette. Giornata intera.", None),
+        ("Pizzo Calabro", "~22 km", "4,5",
+         "Castello Murat + tartufo di Pizzo.", "Assaggia il tartufo al caffè."),
+        ("Grotte di Zungri", "~18 km", "4,4",
+         "Insediamento rupestre medievale nell'entroterra.", None),
+    ]:
+        nome, dist, voto, desc, tip = item
+        story.append(scheda(nome, dist, desc, styles, voto=voto, consiglio=tip))
+
     story.append(PageBreak())
 
     # TRAMONTI
     story.extend(sezione_header(
         "Dove vedere i tramonti",
-        "I «tramonti di Ulisse»: sole che cala sul Tirreno, a volte sullo Stromboli. "
         "Arriva 20–30 minuti prima in alta stagione.",
         styles,
     ))
-    story.append(scheda(
-        "Spiaggia Marina dell'Isola (dal camping)",
-        "0 m",
-        "Il tramonto più comodo: sole dietro il Santuario, colori su sabbia e scoglio. "
-        "Nelle giornate limpide (soprattutto fine aprile / fine agosto) puoi vedere "
-        "il sole «baciare» lo Stromboli.",
-        styles, consiglio="Resta in spiaggia con un aperitivo dal bar del camping.",
-    ))
-    story.append(scheda(
-        "Terrazza del Santuario di Santa Maria dell'Isola",
-        "~150 m",
-        "Vista dall'alto su mare, costa e, con cielo limpido, Eolie. Magico e fotografico.",
-        styles, voto="4,5",
-    ))
-    story.append(scheda(
-        "Affaccio del Cannone / Largo Villetta",
-        "~700 m",
-        "Il classico: Isola e spiaggia inquadrate dalla balconata. Molto frequentato "
-        "all'ora d'oro: arriva in anticipo.",
-        styles, voto="4,7",
-    ))
-    story.append(scheda(
-        "Affaccio dei Sospiri (Raf Vallone / Largo Migliarese)",
-        "~600–700 m · fine Corso",
-        "Uno dei più romantici: vista sulla costa, sulle spiagge e sull'Isola in primo piano. "
-        "Vicino a Pimm's per un aperitivo con vista.",
-        styles, voto="4,9",
-    ))
-    story.append(scheda(
-        "Largo Duomo · Largo Galluppi · Belvedere Rico Ripa",
-        "~500–700 m · centro",
-        "Altri affacci storici: Duomo (verso il porto), Galluppi/Carabinieri, e il "
-        "piccolo Rico Ripa (nascosto tra due palazzi in Largo Migliarese — una caccia al tesoro!).",
-        styles,
-    ))
-    story.append(scheda(
-        "Spiaggia della Rotonda",
-        "~400 m",
-        "Sole che cala dietro l'Isola, vista dalla sabbia. Alternativa al camping "
-        "restando in basso.",
-        styles,
-    ))
-    story.append(scheda(
-        "Belvedere / Faro Capo Vaticano & Giardino degli Dei",
-        "~11 km",
-        "Tramonti diversi, verso Sicilia/Eolie. Il Giardino degli Dei (botaniche "
-        "mediterranee a picco sul mare) è spettacolare al calar del sole.",
-        styles, consiglio="Combina con una giornata spiaggia a Grotticelle.",
-    ))
-    story.append(scheda(
-        "Tramonto in barca",
-        "Partenza porto ~1,5 km",
-        "Tour serali o privati: costa, grotte e sole sull'acqua. Esperienza diversa "
-        "dagli affacci del borgo.",
-        styles,
-    ))
+    for item in [
+        ("Spiaggia Marina dell'Isola (dal camping)", "0 m", None,
+         "Sole dietro il Santuario. A volte allineato allo Stromboli (fine apr / fine ago).",
+         "Aperitivo dal bar del camping."),
+        ("Terrazza del Santuario", "~150 m", "4,5",
+         "Vista dall'alto su mare, costa ed Eolie.", None),
+        ("Affaccio del Cannone / Largo Villetta", "~700 m", "4,7",
+         "Il classico: Isola e spiaggia dalla balconata.", "Arriva in anticipo."),
+        ("Affaccio dei Sospiri (Raf Vallone)", "~600–700 m", "4,9",
+         "Uno dei più romantici; vicino a Pimm's per aperitivo.", None),
+        ("Largo Duomo · Galluppi · Rico Ripa", "~500–700 m", None,
+         "Altri affacci; Rico Ripa è nascosto tra due palazzi (caccia al tesoro!).", None),
+        ("Belvedere Capo Vaticano & Giardino degli Dei", "~11 km", "4,7",
+         "Tramonti verso Sicilia/Eolie, giardino botanico a picco sul mare.", None),
+        ("Tramonto in barca", "Porto ~1,5 km", None,
+         "Costa, grotte e sole sull'acqua.", None),
+    ]:
+        nome, dist, voto, desc, tip = item
+        story.append(scheda(nome, dist, desc, styles, voto=voto, consiglio=tip))
+
     story.append(PageBreak())
 
     # CHICCHE
     story.extend(sezione_header(
-        "Chicche e segreti da non perdere",
-        "Angoli nascosti, esperienze e dettagli che fanno la differenza.",
-        styles,
-    ))
-    story.append(scheda(
-        "Grotta del Palombaro (Grotta dell'Amore)",
-        "~100–200 m a nuoto dallo scoglio · dal camping ~5 min a piedi fino alla spiaggia",
-        "Spiaggia nascosta sotto il giardino del Santuario: sabbia fine, acque turchesi, "
-        "raggiungibile a nuoto (~50 m) o in kayak/pedalò con mare calmo. "
-        "Nome dai colombi (palumbi) o dai tuffi «a pettu i palumbu».",
-        styles, consiglio="Solo con mare piatto e se sai nuotare bene. Mai da soli se il mare è mosso.",
-    ))
-    story.append(scheda(
-        "La finestrella dell'Affaccio del Cannone",
-        "~700 m",
-        "Oltre la balconata principale, cerca la piccola finestra che apre sulla "
-        "cartolina perfetta di Isola + mare. Foto iconica.",
-        styles,
-    ))
-    story.append(scheda(
-        "Belvedere Rico Ripa (affaccio nascosto)",
-        "~600 m",
-        "Piccolo balcone tra due palazzi in Largo Migliarese. Pochi lo trovano: "
-        "è la «caccia al tesoro» degli affacci di Tropea.",
-        styles,
-    ))
-    story.append(scheda(
-        "Scalinata panoramica camping → centro",
-        "~100 m dall'ingresso",
-        "Non solo collegamento: la salita stessa è un panorama continuo su mare e Isola. "
-        "Al tramonto e di sera è parte dell'esperienza.",
-        styles,
-    ))
-    story.append(scheda(
-        "Tramonto sullo Stromboli (fenomeno raro)",
-        "Dalla spiaggia o dal Santuario",
-        "Due volte l'anno circa (fine aprile e fine agosto), con cielo limpido, "
-        "il sole tramonta allineato allo Stromboli: evento molto fotografato dalla Costa degli Dei.",
-        styles, consiglio="Chiedi in campeggio le date indicative del periodo del tuo soggiorno.",
-    ))
-    story.append(scheda(
-        "Tour grotte e calette in barca",
-        "Porto ~1,5 km",
-        "Oltre Capo Vaticano: grotte marine, Praia i Focu, snorkeling. "
-        "Spesso 35–45 € a persona in tour di gruppo.",
-        styles,
-    ))
-    story.append(scheda(
-        "Cipolla rossa & street food tipico",
-        "Centro ~450 m",
-        "Assaggia la cipolla cruda (è dolce!), fileja nei ristoranti, e cerca "
-        "negozi di tipicità sul Corso per 'nduja, tonno Callipo e liquori.",
-        styles,
-    ))
-    story.append(scheda(
-        "Passeggiata serale sul Corso + gelato",
-        "~450–700 m",
-        "Dopo cena: Corso Vittorio Emanuele, Piazza Ercole, affacci illuminati. "
-        "L'anima di Tropea è la sera, non solo la spiaggia.",
-        styles,
-    ))
-    story.append(scheda(
-        "Panchina panoramica / lungomare",
-        "~300–800 m zona mare",
-        "Sul lungomare e nelle zone vicine alla Marina ci sono punti per sedersi "
-        "con vista Isola: ideali per foto e pausa senza salire in centro.",
-        styles,
-    ))
-    story.append(scheda(
-        "Snorkel sotto gli scogli dell'Isola",
-        "0–200 m dalla spiaggia del camping",
-        "Fondali chiari e vita marina vicino agli scogli: maschera e boccaglio bastano. "
-        "Meglio al mattino, mare calmo.",
-        styles,
-    ))
-
-    story.append(Spacer(1, 8))
-    story.extend(sezione_header(
-        "Idee di itinerario",
-        "Tre proposte pratiche dal Camping Marina dell'Isola.",
-        styles,
-    ))
-    story.append(Paragraph("Giornata 1 – Tutto a piedi", styles["NomeLuogo"]))
-    story.append(Paragraph(
-        "Bagno Marina Isola → Santuario → pranzo Tropical o camping → pomeriggio "
-        "centro, Affaccio Cannone, finestrella, Cattedrale → tramonto Affaccio "
-        "Sospiri o Cannone → cena La Conchiglia / Vicolo 34 / Scacco Matto.",
-        styles["Descrizione"],
-    ))
-    story.append(Paragraph("Giornata 2 – Entro 5 km", styles["NomeLuogo"]))
-    story.append(Paragraph(
-        "Mattina Michelino o Occhiale → pranzo Giardino del Mare o pizza Miseria "
-        "& Nobiltà (Parghelia) → rientro, snorkel/Palombaro se mare calmo → "
-        "tramonto dalla spiaggia del camping.",
-        styles["Descrizione"],
-    ))
-    story.append(Paragraph("Giornata 3 – Speciale", styles["NomeLuogo"]))
-    story.append(Paragraph(
-        "Tour barca grotte/Capo Vaticano, oppure cena gourmet a De' Minimi, "
-        "oppure Pizzo (tartufo) + rientro al tramonto sugli affacci.",
-        styles["Descrizione"],
-    ))
-
-    story.append(Spacer(1, 10))
-    story.extend(sezione_header(
-        "Info utili",
-        "Contatti e consigli pratici.",
+        "Chicche e segreti",
+        "Angoli nascosti e dettagli che fanno la differenza.",
         styles,
     ))
     for item in [
-        "<b>Camping:</b> Via Lungomare Sorrentino, Tropea (VV) · Tel. +39 0963 61970 / +39 339 1017016 · info@campingmarinaisola.it",
-        "<b>Centro:</b> scalinata a ~100 m dall'ingresso (~8–12 min). Circa 100–150 gradini.",
+        ("Grotta del Palombaro (Grotta dell'Amore)", "~50 m a nuoto dallo scoglio",
+         "Spiaggia nascosta sotto il Santuario. Solo mare calmo, a nuoto/kayak.",
+         "Mai da soli se il mare è mosso."),
+        ("Finestrella Affaccio del Cannone", "~700 m",
+         "Piccola finestra = foto iconica Isola + mare.", None),
+        ("Belvedere Rico Ripa", "~600 m",
+         "Affaccio nascosto in Largo Migliarese.", None),
+        ("Tramonto sullo Stromboli", "spiaggia / Santuario",
+         "Fenomeno raro ~2 volte l'anno (fine apr / fine ago).",
+         "Chiedi in campeggio le date indicative."),
+        ("Tour grotte in barca", "Porto ~1,5 km",
+         "Praia i Focu, grotte, snorkeling. Spesso 35–45 €.", None),
+        ("Snorkel sotto gli scogli dell'Isola", "0–200 m",
+         "Fondali chiari vicino al camping. Meglio al mattino.", None),
+        ("Passeggiata serale + gelato", "~450–700 m",
+         "Corso Vittorio Emanuele e affacci illuminati: l'anima di Tropea.", None),
+    ]:
+        nome, dist, desc, tip = item
+        story.append(scheda(nome, dist, desc, styles, consiglio=tip))
+
+    story.append(Spacer(1, 6))
+    story.extend(sezione_header(
+        "Idee di itinerario",
+        "Tre proposte dal Camping Marina dell'Isola.",
+        styles,
+    ))
+    story.append(Paragraph("<b>Giornata 1 – A piedi:</b> Marina Isola → Santuario → pranzo Tropical/"
+                           "camping → Affaccio Cannone + finestrella → tramonto Sospiri → cena "
+                           "La Conchiglia / Vicolo 34 / Scacco Matto.", styles["Descrizione"]))
+    story.append(Paragraph("<b>Giornata 2 – Entro 5 km:</b> Baia di Riaci (mattina) → Formicoli o "
+                           "Michelino → pizza Miseria & Nobiltà o Giardino del Mare → tramonto "
+                           "dal camping.", styles["Descrizione"]))
+    story.append(Paragraph("<b>Giornata 3 – Speciale:</b> barca grotte/Praia i Focu, oppure "
+                           "Grotticelle + Capo Vaticano, oppure De' Minimi a cena, oppure Pizzo "
+                           "(tartufo).", styles["Descrizione"]))
+
+    story.append(Spacer(1, 8))
+    story.extend(sezione_header("Info utili", "Contatti e note pratiche.", styles))
+    for item in [
+        "<b>Camping:</b> Tel. +39 0963 61970 / +39 339 1017016 · info@campingmarinaisola.it · "
+        '<link href="https://www.campingmarinaisola.it/" color="#0077A8"><u>campingmarinaisola.it</u></link>',
+        "<b>Centro:</b> scalinata ~100 m dall'ingresso (~8–12 min, 100–150 gradini).",
         "<b>Stazione FS Tropea:</b> ~1 km.",
-        "<b>Alta stagione:</b> spiagge e affacci pieni; mattina presto e prenotazioni a cena.",
-        "<b>Mare per Palombaro:</b> solo con condizioni calme e in sicurezza.",
+        "<b>Alta stagione:</b> prenota cene e arriva presto in spiaggia/affacci.",
+        "<b>Palombaro:</b> solo mare calmo e in sicurezza.",
         "<b>Da comprare:</b> cipolla rossa IGP, 'nduja, tonno Callipo, liquori tipici.",
     ]:
         story.append(Paragraph(f"• {item}", styles["Descrizione"]))
 
-    story.append(Spacer(1, 12))
+    story.append(Spacer(1, 10))
     story.append(HRFlowable(width="100%", thickness=1, color=ACQUA, spaceAfter=6))
     story.append(Paragraph(
-        "Buona vacanza a Tropea! Distanze e voti sono indicativi e possono variare. "
-        "Verifica orari e disponibilità sul posto.",
+        "Buona vacanza! Distanze, voti e link sono indicativi. "
+        "Foto: Wikimedia Commons. Verifica orari sul posto.",
         styles["Nota"],
     ))
     story.append(Paragraph(
@@ -684,6 +756,7 @@ def build():
 
     doc.build(story, onFirstPage=cover_page, onLaterPages=header_footer)
     print(f"PDF creato: {OUTPUT}")
+    print(f"Dimensione: {os.path.getsize(OUTPUT)} bytes")
 
 
 if __name__ == "__main__":
